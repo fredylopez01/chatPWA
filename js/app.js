@@ -1,4 +1,11 @@
-navigator.serviceWorker.register("../sw.js");
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then((reg) => console.log("SW registrado:", reg.scope))
+      .catch((err) => console.error("Error SW:", err));
+  });
+}
 // Referencias de jQuery
 
 var titulo = $("#titulo");

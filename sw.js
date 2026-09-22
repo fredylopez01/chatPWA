@@ -24,6 +24,7 @@ const APP_SHELL_INMUTABLE = [
 ];
 
 self.addEventListener("install", (e) => {
+  self.skipWaiting();
   const cacheStatic = caches
     .open(STATIC_CACHE)
     .then((cache) => cache.addAll(APP_SHELL));
@@ -46,14 +47,23 @@ self.addEventListener("install", (e) => {
 });
 
 self.addEventListener("activate", (e) => {
-  const respuesta = caches.keys().then((keys) => {
-    keys.forEach((key) => {
-      if (key !== STATIC_CACHE && key.includes("static")) {
-        return caches.delete(key);
-      }
-    });
-  });
-  e.waitUntil(respuesta);
+  e.waitUntil(
+    caches
+      .keys()
+      .then((keys) => {
+        return Promise.all(
+          keys
+            .filter(
+              (key) =>
+                key !== STATIC_CACHE &&
+                key !== DYNAMIC_CACHE &&
+                key !== INMUTABLE_CACHE,
+            )
+            .map((key) => caches.delete(key)),
+        );
+      })
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener("fetch", (e) => {
