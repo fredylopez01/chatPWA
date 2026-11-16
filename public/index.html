@@ -1,13 +1,13 @@
-<meta name="mobile-web-app-capable" content="yes" />
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, height=device-height, viewport-fit=cover"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Chat de Superheroes</title>
+    <title>Chat para superheroes</title>
 
     <link
       href="https://fonts.googleapis.com/css?family=Quicksand:300,400"
@@ -21,11 +21,16 @@
     />
     <link
       rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.3.1/css/all.min.css"
     />
 
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/animate.css" />
+    <link rel="stylesheet" href="js/libs/plugins/mdtoast.min.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.css"
+    />
 
     <link rel="shortcut icon" type="image/ico" href="img/favicon.ico" />
 
@@ -36,6 +41,7 @@
 
     <!-- IOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
     <link rel="apple-touch-icon" href="img/icons/icon-192x192.png" />
     <link
@@ -86,7 +92,6 @@
 
     <meta name="apple-mobile-web-app-title" content="Twittor!" />
   </head>
-
   <body>
     <!-- Titulo -->
     <span class="first">
@@ -120,6 +125,51 @@
           placeholder="Nuevo mensaje..."
           rows="5"
         ></textarea>
+
+        <!-- <div class="modal-mapa oculto">
+                    <iframe
+                        width="100%"
+                        height="250"
+                        frameborder="0"
+                        src="https://www.google.com/maps/embed/v1/view?key=AIzaSyA-HXVa2jtkGfKtIJwisxgC46RaWqC1xuI&center=14.027334, -87.220878&zoom=17" allowfullscreen>
+                        </iframe>
+                </div > -->
+        <div class="camara-contenedor fadeIn fast oculto" align="center">
+          <video id="player" autoplay style="height: 300px"></video>
+
+          <button id="tomar-foto-btn">
+            <i class="fa fa-camera"></i>
+            Tomar Foto
+          </button>
+        </div>
+
+        <!-- Actividad 7 - Espacio para grabar video webm -->
+        <div class="video-contenedor fadeIn fast oculto" align="center">
+          <video
+            id="player-video"
+            autoplay
+            muted
+            playsinline
+            style="height: 300px"
+          ></video>
+
+          <span id="grabacion-estado" class="grabacion-estado oculto">
+            <i class="fa fa-circle"></i>
+            <span id="tiempo-grabacion">00:00</span>
+          </span>
+
+          <button id="grabar-video-btn">
+            <i class="fa fa-video"></i>
+            Grabar Video
+          </button>
+
+          <button id="detener-video-btn" class="oculto">
+            <i class="fa fa-stop"></i>
+            Detener
+          </button>
+
+          <p class="formato-video">Formato: video/webm</p>
+        </div>
       </div>
 
       <!-- boton de enviar -->
@@ -128,18 +178,46 @@
         <i class="fa fa-paper-plane"></i>
       </div>
 
-      <div id="post-btn" class="fab-marker">
+      <div id="location-btn" class="fab-marker">
         <i class="fa fa-map-marker-alt"></i>
       </div>
 
-      <div id="post-btn" class="fab-photo">
-        <i class="fa fa-image"></i>
+      <div id="photo-btn" class="fab-photo">
+        <i class="fa fa-camera"></i>
+      </div>
+
+      <!-- Actividad 7 - Botón del espacio de video -->
+      <div id="video-btn" class="fab-video">
+        <i class="fa fa-video"></i>
       </div>
     </div>
     <!-- Fin Modal -->
 
     <!-- Seleccion de personaje -->
     <div id="seleccion" class="seleccion animated fadeIn fast" align="center">
+      <!-- Botón de notificaciones -->
+      <button class="oculto btn-noti-activadas">
+        Notificaciones Activadas
+      </button>
+      <button class="oculto btn-noti-desactivadas">
+        Notificaciones Desactivadas
+      </button>
+      <!-- Fin de boton de notificaciones -->
+
+      <div id="capacidades-panel">
+        <button id="btn-vibrar">Vibrar</button>
+        <button id="btn-bateria">Estado de Batería</button>
+        <button id="btn-red">Información de Red</button>
+        <button id="btn-compartir">Compartir texto de prueba</button>
+        <button id="btn-compartir-foto">Compartir última foto</button>
+        <button id="btn-exportar">Exportar mensajes (JSON)</button>
+        <label id="wake-lock-label" style="display: none; margin-top: 10px">
+          <input type="checkbox" id="wake-lock-toggle" />
+          Mantener pantalla encendida
+        </label>
+        <button id="btn-bluetooth">Conectar Bluetooth (GATT)</button>
+      </div>
+
       <div>
         <img
           data-user="spiderman"
@@ -191,25 +269,49 @@
     <!-- Lista de mensajes -->
     <ul id="timeline" class="timeline oculto">
       <!-- Mensaje -->
-      <li class="animated fadeIn fast">
-        <div class="avatar">
-          <img src="img/avatars/spiderman.jpg" />
-        </div>
-        <div class="bubble-container">
-          <div class="bubble">
-            <h3>@spiderman</h3>
-            <br />
-            La tía May, hizo unos panqueques en forma de ironman!
-          </div>
+      <!-- <li class="animated fadeIn fast">
+                <div class="avatar">
+                    <img src="img/avatars/spiderman.jpg">
+                </div>
+                <div class="bubble-container">
+                    <div class="bubble">
+                        <h3>@spiderman</h3>
+                        <br/>
+                        La tía May, hizo unos panqueques en forma de ironman!
+                    </div>
+                    
+                    <div class="arrow"></div>
+                </div>
+            </li> -->
+      <!-- Fin del mensaje -->
 
-          <div class="arrow"></div>
-        </div>
-      </li>
+      <!-- Mapa message -->
+      <!-- <li class="animated fadeIn fast">
+                <div class="avatar">
+                    <img src="img/avatars/spiderman.jpg">
+                </div>
+                <div class="bubble-container">
+                    <div class="bubble">
+                        <iframe
+                            width="100%"
+                            height="250"
+                            frameborder="0" style="border:0"
+                            src="https://www.google.com/maps/embed/v1/view?key=AIzaSyA-HXVa2jtkGfKtIJwisxgC46RaWqC1xuI&center=14.027334, -87.220878&zoom=17" allowfullscreen>
+                            </iframe>
+                    </div>
+                    
+                    <div class="arrow"></div>
+                </div>
+            </li>  -->
       <!-- Fin del mensaje -->
     </ul>
     <!-- Fin Lista de mensajes -->
 
-    <script src="js/libs/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="js/libs/plugins/mdtoast.min.js"></script>
+
+    <!-- Camara Class -->
+    <script src="js/camara-class.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
