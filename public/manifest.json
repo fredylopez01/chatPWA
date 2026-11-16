@@ -1,7 +1,7 @@
 {
   "short_name": "ChatPWA",
   "name": "Chat para superheroes",
-  "start_url": "index.html",
+  "start_url": "./",
   "background_color": "#3498db",
   "theme_color": "#3498db",
   "display": "standalone",
@@ -46,6 +46,12 @@
       "src": "img/icons/icon-512x512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "img/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ]
 }

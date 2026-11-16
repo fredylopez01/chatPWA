@@ -4,8 +4,9 @@ importScripts("https://cdn.jsdelivr.net/npm/pouchdb@7.0.0/dist/pouchdb.min.js");
 importScripts("js/sw-db.js");
 importScripts("js/sw-utils.js");
 
-const STATIC_CACHE = "static-v5";
-const DYNAMIC_CACHE = "dynamic-v1";
+// Se incrementan las versiones para forzar la actualización
+const STATIC_CACHE = "static-v6";
+const DYNAMIC_CACHE = "dynamic-v2";
 const INMUTABLE_CACHE = "inmutable-v2";
 
 const APP_SHELL = [
@@ -34,7 +35,6 @@ const APP_SHELL_INMUTABLE = [
   "https://cdn.jsdelivr.net/npm/pouchdb@7.0.0/dist/pouchdb.min.js",
 ];
 
-// Cachea recurso por recurso: si un CDN falla no tumba toda la instalación
 function cachearRecursos(cacheName, urls) {
   return caches
     .open(cacheName)
@@ -62,11 +62,9 @@ self.addEventListener("activate", (e) => {
       if (key !== STATIC_CACHE && key.includes("static")) {
         return caches.delete(key);
       }
-
       if (key !== DYNAMIC_CACHE && key.includes("dynamic")) {
         return caches.delete(key);
       }
-
       if (key !== INMUTABLE_CACHE && key.includes("inmutable")) {
         return caches.delete(key);
       }
@@ -80,9 +78,26 @@ self.addEventListener("fetch", (e) => {
   let respuesta;
 
   if (e.request.url.includes("/api")) {
-    // return respuesta????
     respuesta = manejoApiMensajes(DYNAMIC_CACHE, e.request);
+  } else if (
+    e.request.destination === "document" ||
+    e.request.url.includes(".css")
+  ) {
+    // ESTRATEGIA NETWORK FIRST para el HTML y CSS (para ver cambios rápido)
+    respuesta = fetch(e.request)
+      .then((newRes) => {
+        // Guarda en caché la nueva versión
+        caches
+          .open(STATIC_CACHE)
+          .then((cache) => cache.put(e.request, newRes.clone()));
+        return newRes;
+      })
+      .catch(() => {
+        // Si falla la red, devuelve lo que haya en caché
+        return caches.match(e.request);
+      });
   } else {
+    // ESTRATEGIA CACHE FIRST para imágenes y scripts
     respuesta = caches.match(e.request).then((res) => {
       if (res) {
         actualizaCacheStatico(STATIC_CACHE, e.request, APP_SHELL_INMUTABLE);
@@ -101,27 +116,18 @@ self.addEventListener("fetch", (e) => {
 // tareas asíncronas
 self.addEventListener("sync", (e) => {
   console.log("SW: Sync");
-
   if (e.tag === "nuevo-post") {
-    // postear a BD cuando hay conexión
     const respuesta = postearMensajes();
-
     e.waitUntil(respuesta);
   }
 });
 
 // Escuchar PUSH
 self.addEventListener("push", (e) => {
-  // console.log(e);
-
   const data = JSON.parse(e.data.text());
-
-  // console.log(data);
-
   const title = data.titulo;
   const options = {
     body: data.cuerpo,
-    // icon: 'img/icons/icon-72x72.png',
     icon: `img/avatars/${data.usuario}.jpg`,
     badge: "img/favicon.ico",
     image:
@@ -131,16 +137,11 @@ self.addEventListener("push", (e) => {
     ],
     openUrl: "/",
     data: {
-      // url: 'https://google.com',
       url: "/",
       id: data.usuario,
     },
     actions: [
-      {
-        action: "thor-action",
-        title: "Thor",
-        icon: "img/avatar/thor.jpg",
-      },
+      { action: "thor-action", title: "Thor", icon: "img/avatar/thor.jpg" },
       {
         action: "ironman-action",
         title: "Ironman",
@@ -152,7 +153,6 @@ self.addEventListener("push", (e) => {
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Cierra la notificacion
 self.addEventListener("notificationclose", (e) => {
   console.log("Notificación cerrada", e);
 });
@@ -162,8 +162,6 @@ self.addEventListener("notificationclick", (e) => {
   const accion = e.action;
 
   console.log({ notificacion, accion });
-  // console.log(notificacion);
-  // console.log(accion);
 
   const respuesta = clients.matchAll().then((clientes) => {
     let cliente = clientes.find((c) => {
